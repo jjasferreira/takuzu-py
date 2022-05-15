@@ -2,7 +2,7 @@
 # Devem alterar as classes e funções neste ficheiro de acordo com as instruções do enunciado.
 # Além das funções e classes já definidas, podem acrescentar outras que considerem pertinentes.
 
-# Grupo 00:
+# Grupo 07:
 # 99251 João Nuno Cardoso
 # 99259 José João Ferreira
 
@@ -106,7 +106,7 @@ class Takuzu(Problem):
 
 if __name__ == "__main__":
     # TODO:
-    # Ler o ficheiro de input de sys.argv[1],
+    # Ler o ficheiro do standard input,
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
