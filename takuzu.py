@@ -6,6 +6,8 @@
 # 99251 João Nuno Cardoso
 # 99259 José João Ferreira
 
+import numpy as np
+
 import sys
 from search import (
     Problem,
@@ -31,41 +33,49 @@ class TakuzuState:
 
     # TODO: outros metodos da classe
 
-
 class Board:
     """Representação interna de um tabuleiro de Takuzu."""
-
+    def __init__(self, mat, dim):
+        self.state = np.array(mat)
+        self.dim = dim
+        
+    def __repr__(self):
+        res = ""
+        for i in range(self.dim):
+            for j in range(self.dim):
+                res += str(self.state[i, j]) + "\t"
+            res += "\n"
+        return res
+    
     def get_number(self, row: int, col: int) -> int:
         """Devolve o valor na respetiva posição do tabuleiro."""
-        # TODO
-        pass
+        return self.state[row, col]
 
     def adjacent_vertical_numbers(self, row: int, col: int) -> (int, int):
         """Devolve os valores imediatamente abaixo e acima,
         respectivamente."""
-        # TODO
-        pass
+        v1 = self.state[row + 1, col] if (row != self.dim - 1) else (None)
+        v2 = self.state[row - 1, col] if (row != 0) else (None) 
+        return (v1, v2)
 
     def adjacent_horizontal_numbers(self, row: int, col: int) -> (int, int):
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
-        # TODO
-        pass
+        v1 = self.state[row, col - 1] if (col != 0) else (None) 
+        v2 = self.state[row, col + 1] if (col != self.dim - 1) else (None)
+        return (v1, v2)
 
     @staticmethod
     def parse_instance_from_stdin():
         """Lê o test do standard input (stdin) que é passado como argumento
-        e retorna uma instância da classe Board.
-
-        Por exemplo:
-            $ python3 takuzu.py < input_T01
-
-            > from sys import stdin
-            > stdin.readline()
-        """
-        # TODO
-        pass
-
+        e retorna uma instância da classe Board."""
+        mat = []
+        dim = int(input())
+        for foo in range(dim):
+            # IDK: Isto faz split todas as iterações?
+            mat.append([int(i) for i in input().split()])
+        return Board(mat, dim)
+        
     # TODO: outros metodos da classe
 
 
@@ -104,10 +114,18 @@ class Takuzu(Problem):
     # TODO: outros metodos da classe
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # Função main
     # TODO:
     # Ler o ficheiro do standard input,
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
+
+    # Exemplo 1:
+    board = Board.parse_instance_from_stdin()
+    print("Initial:\n", board, sep="")
+    print(board.adjacent_vertical_numbers(3,3))
+    print(board.adjacent_horizontal_numbers(3,3))
+    print(board.adjacent_vertical_numbers(1,1))
+    print(board.adjacent_horizontal_numbers(1,1))
     pass
