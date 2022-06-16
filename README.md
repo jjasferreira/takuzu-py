@@ -32,9 +32,9 @@ Um programa em Python 3.8 que resolve o problema _Takuzu_ usando técnicas "A.I.
 
     Lista de recursos a implementar
 
-- [ ] apply action
-- [ ] goal state
-- [ ] asd
+- [ ] Variável com número de espaços vazios no board
+- [ ] Goal test dê false rapidamente para tabuleiros não preenchidos
+- [ ] Avaliar dois antes e dois depois no actions (horiz e vert)
 
 ---
 
