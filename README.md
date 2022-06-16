@@ -7,6 +7,8 @@ Um programa em Python 3.8 que resolve o problema _Takuzu_ usando técnicas "A.I.
 
 ## Dúvidas
 
+- **_JC_**: Quando dizem que a função `actions` devolve uma lista de ações, tem mesmo que retornar uma lista ou pode retornar por exemplo um tuplo?
+
 - **_JOTA_**: O que é o Node, no search.py? É uma abstração do TazukuState? E onde é que implementamos as funções expand? Temos que alterar o Node para ter um state com o estado do tabuleiro? Como é que integramos o Node no takuzu.py?
 
   > **_CARROTT_**: Não é suposto alterar o search.py, todo o código que desenvolverem tem de estar no takuzu.py. Podem meter prints nas funções do search.py para ajudar a fazer debug, mas no mooshak vocês só submetem o takuzu.py que depois vai chamar o search.py original. Têm de definir as classes Board, TakuzuState e Takuzu. - O Board é suposto ter a representação interna do tabuleiro e as operações sobre o tabuleiro que considerarem necessárias. - O TakuzuState vai ter este Board como atributo e serve como uma abstração para os nós nas procuras do search.py. - No Takuzu vais definir os métodos necessários para a procura. O actions é chamado internamente pelo expand no search.py e o h é chamado nas procuras A\* e gananciosa, por exemplo.
@@ -32,9 +34,10 @@ Um programa em Python 3.8 que resolve o problema _Takuzu_ usando técnicas "A.I.
 
     Lista de recursos a implementar
 
-- [ ] Variável com número de espaços vazios no board
-- [ ] Goal test dê false rapidamente para tabuleiros não preenchidos
-- [ ] Avaliar dois antes e dois depois no actions (horiz e vert)
+- [x] Variável com número de espaços vazios no board
+- [x] Goal test dê false rapidamente para tabuleiros não preenchidos
+- [x] Avaliar dois antes e dois depois no `actions` (horiz. e vert.)
+- [x] Adicionar a cada nova função a sua docstring
 
 ---
 

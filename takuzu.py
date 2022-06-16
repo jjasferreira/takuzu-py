@@ -9,6 +9,8 @@
 import numpy as np
 
 import sys
+
+from tomlkit import string
 from search import (
     Problem,
     Node,
@@ -23,7 +25,7 @@ from search import (
 class TakuzuState:
     state_id = 0
 
-    def __init__(self, board):
+    def __init__(self, board: 'Board'):
         self.board = board
         self.id = TakuzuState.state_id
         TakuzuState.state_id += 1
@@ -38,7 +40,7 @@ class TakuzuState:
 class Board:
     """Representação interna de um tabuleiro de Takuzu."""
     def __init__(self, array, dim, empty_cells):
-        self.state = array
+        self.array = array
         self.dim = dim
         self.empty_cells = empty_cells
 
@@ -46,56 +48,49 @@ class Board:
         res = ""
         for i in range(self.dim):
             for j in range(self.dim):
-                res += str(self.state[i, j]) + "\t"
+                res += str(self.array[i, j]) + "\t"
             res += "\n"
         return res
     
     def get_row(self, row: int) -> tuple:
-        return tuple(self.state[row, :self.dim])
+        return tuple(self.array[row, :self.dim])
 
     def get_column(self, column: int) -> tuple:
-        return tuple(self.state[:self.dim, column])
+        return tuple(self.array[:self.dim, column])
 
     def get_number(self, row: int, col: int) -> int:
         """Devolve o valor na respetiva posição do tabuleiro."""
-        return self.state[row, col]
+        return self.array[row, col]
 
     def adjacent_vertical_numbers(self, row: int, col: int) -> tuple:
         """Devolve os valores imediatamente abaixo e acima,
         respectivamente."""
-        v1 = self.state[row + 1, col] if (row < self.dim - 1) else (None)
-        v2 = self.state[row - 1, col] if (row > 0) else (None) 
-        return (v1, v2)
-    
-    def two_below_vertical_numbers(self, row: int, col: int) -> tuple:
-        """Devolve os dois valores consecutivos imediatamente abaixo."""
-        v1 = self.state[row + 2, col] if (row < self.dim - 2) else (None)
-        v2 = self.state[row + 1, col] if (row < self.dim - 1) else (None)
-        return (v1, v2)
-
-    def two_above_vertical_numbers(self, row: int, col: int) -> tuple:
-        """Devolve os dois valores consecutivos imediatamente acima."""
-        v1 = self.state[row - 1, col] if (row > 0) else (None) 
-        v2 = self.state[row - 2, col] if (row > 1) else (None) 
+        v1 = self.array[row + 1, col] if (row < self.dim - 1) else (None)
+        v2 = self.array[row - 1, col] if (row > 0) else (None) 
         return (v1, v2)
 
     def adjacent_horizontal_numbers(self, row: int, col: int) -> tuple:
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
-        v1 = self.state[row, col - 1] if (col > 0) else (None) 
-        v2 = self.state[row, col + 1] if (col < self.dim - 1) else (None)
+        v1 = self.array[row, col - 1] if (col > 0) else (None) 
+        v2 = self.array[row, col + 1] if (col < self.dim - 1) else (None)
         return (v1, v2)
     
-    def two_previous_horizontal_numbers(self, row: int, col: int) -> tuple:
-        """Devolve os dois valores consecutivos imediatamente à esquerda."""
-        v1 = self.state[row, col - 2] if (col > 1) else (None)
-        v2 = self.state[row, col - 1] if (col > 0) else (None)
-        return (v1, v2)
-
-    def two_following_horizontal_numbers(self, row: int, col: int) -> tuple:
-        """Devolve os dois valores consecutivos imediatamente à direita."""
-        v1 = self.state[row, col + 1] if (col < self.dim - 1) else (None)
-        v2 = self.state[row, col + 2] if (col < self.dim - 2) else (None)
+    def two_numbers(self, row: int, col: int, mode: string) -> tuple:
+        """Devolve os dois valores imediatamente abaixo, acima, à esquerda ou à direita,
+        dependendo da string argumento."""
+        if (mode == "below"):
+            v1 = self.array[row + 2, col] if (row < self.dim - 2) else (None)
+            v2 = self.array[row + 1, col] if (row < self.dim - 1) else (None)
+        elif (mode == "above"):
+            v1 = self.array[row - 1, col] if (row > 0) else (None) 
+            v2 = self.array[row - 2, col] if (row > 1) else (None) 
+        elif (mode == "previous"):
+            v1 = self.array[row, col - 2] if (col > 1) else (None)
+            v2 = self.array[row, col - 1] if (col > 0) else (None)
+        elif (mode == "following"):
+            v1 = self.array[row, col + 1] if (col < self.dim - 1) else (None)
+            v2 = self.array[row, col + 2] if (col < self.dim - 2) else (None)
         return (v1, v2)
 
     @staticmethod
@@ -112,12 +107,12 @@ class Board:
         for i in range(dim):
             for j in range(dim):
                 if mat[i][j] == 2:
-                    empty_cells+=1
+                    empty_cells += 1
 
         return Board(np.array(mat), dim, empty_cells)
 
     def apply_action(self, action):
-        array = self.state
+        array = self.array
         array[action[0]][action[1]] = action[2]
         return Board(array, self.dim, self.empty_cells - 1)
 
@@ -127,41 +122,45 @@ class Board:
 class Takuzu(Problem):
     def __init__(self, board: Board):
         """O construtor especifica o estado inicial."""
-        # NEW:
-        self.current = board
+        # NEW: self.current = board
+        self.initial = board
         pass
 
     def actions(self, state: TakuzuState):
         """Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento."""
-        res = []
-        """
-        - Iterar pelas células,
-        - Avaliar 2 antes e 2 depois
-        - 
-        """
+        modes = ("previous", "following", "below", "above")
         board = state.board
         for i in range(board.dim):
             for j in range(board.dim):
                 if board.get_number(i, j) == 2:
+                    # Verificação dos 2 números consecutivos em todas as direções
+                    for m in modes:
+                        f = board.two_numbers(i, j, m)
+                        if (f == (0, 0) or f == (1, 1)):
+                            if (f[0] == 0): v = 1
+                            elif (f[0] == 1): v = 0
+                            return [[i, j, v]]
+        res = []
+        for i in range(board.dim):
+            for j in range(board.dim):
+                if board.get_number(i, j) == 2:
+                    # Verificação dos números imediatamente adjacentes em todas as direções
                     h = set()
                     hn = board.adjacent_horizontal_numbers(i, j)
-                    if (hn == (1, 1)):
-                        h.add(0)
-                    elif (hn == (0,0)):
-                        h.add(1)
-                    else:
-                        h.update([0,1])
+                    if (hn == (0, 0)): h.add(1)
+                    elif (hn == (1, 1)): h.add(0)
+                    else: h.update([0,1])
                     v = set()
                     vn = board.adjacent_vertical_numbers(i, j)
-                    if (vn == (1, 1)):
-                        v.add(0)
-                    elif (vn == (0,0)):
-                        v.add(1)
-                    else:
-                        v.update([0,1])
+                    if (vn == (0, 0)): v.add(1)
+                    elif (vn == (1, 1)): v.add(0)
+                    else: v.update([0,1])
                     s = h.intersection(v)
-                    if (len(s) != 0):
+                    l = len(s)
+                    if (l == 1):
+                        return [[i, j, s.pop()]]
+                    elif (l == 2):
                         for k in s:
                             res.append([i, j, k])
         return res
@@ -179,8 +178,8 @@ class Takuzu(Problem):
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas com uma sequência de números adjacentes."""
         
-        board = state.get_board()
-        if board.empty_cells != 0:
+        board = state.board
+        if (board.empty_cells != 0):
             print("1")
             return False
         rows = set()
@@ -192,39 +191,34 @@ class Takuzu(Problem):
             """Decide se uma linha ou coluna de um tabuleiro é válida"""
             previous = None
             # Número de jogadas sucessivas
-            state = 0
-            sum = 0
+            state = 0 # counts the number of successive pieces of any kind
+            sum = 0 # balance between 
+            values = {0:-1, 1:1}
             for i in range(dim):
-                print(i , "State:" , " " , state , "\n")
                 val = section[i]
-                print(val , "\n")
-                if val == 2:
-                    print("2")
-                    return False
-                sum += -1 if (val == 1) else -1
-                if val != previous:
-                    state = 1
-                else:
-                    if state == 2:
-                        print("3")
-                        return False
+                # if val == 2: Não é suposto ser preciso porque se tiver vazios já acusou mal antes
+                #     return False
+                # else:
+                if val == previous:
                     state += 1
-                previous = val
-                if i == (dim-1) and abs(state) == 1 and even:
-                    print("4")
+                else:
+                    state = 1
+                sum += values[val]
+                if state == 3:
                     return False
-            return True
+                previous = val
+            if even:
+                return (sum==0)
+            else:
+                return (abs(sum) == 1)
 
         for i in range(dim):
             r = board.get_row(i)
-            c = board.get_column(i)
-            print(str(r) + str(c))
-            if r in rows or c in columns:
-                print("5")
+            c = board.get_column(i)    
+            if r in rows or c in columns:        
                 return False
             else:
-                if not valid_section(r, even) or not valid_section(c, even):
-                    print("6")
+                if not valid_section(r, even) or not valid_section(c, even):            
                     return False
                 rows.add(r)
                 columns.add(c)
@@ -245,20 +239,43 @@ if __name__ == "__main__":  # Função main
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
-
-    """
-    # Exemplo 1:
+    """# Exemplo 1:
     board = Board.parse_instance_from_stdin()
     print("Initial:\n", board, sep="")
     print(board.adjacent_vertical_numbers(3,3))
     print(board.adjacent_horizontal_numbers(3,3))
     print(board.adjacent_vertical_numbers(1,1))
-    print(board.adjacent_horizontal_numbers(1,1))
-    """
+    print(board.adjacent_horizontal_numbers(1,1))"""
 
-    # Exemplo 2:
+    """# Exemplo 2:
     board = Board.parse_instance_from_stdin()
     print("Initial:\n", board, sep="")
     problem = Takuzu(board)
     initial_state = TakuzuState(board)
-    print(problem.goal_test(initial_state))
+    print(initial_state.board.get_number(2, 2))
+    result_state = problem.result(initial_state, (2, 2, 1))
+    print(result_state.board.get_number(2, 2))"""
+
+    """# Exemplo 3:
+    board = Board.parse_instance_from_stdin()
+    problem = Takuzu(board)
+    s0 = TakuzuState(board)
+    print("Initial:\n", s0.board, sep="")
+    s1 = problem.result(s0, (0, 0, 0))
+    s2 = problem.result(s1, (0, 2, 1))
+    s3 = problem.result(s2, (1, 0, 1))
+    s4 = problem.result(s3, (1, 1, 0))
+    s5 = problem.result(s4, (1, 3, 1))
+    s6 = problem.result(s5, (2, 0, 0))
+    s7 = problem.result(s6, (2, 2, 1))
+    s8 = problem.result(s7, (2, 3, 1))
+    s9 = problem.result(s8, (3, 2, 0))
+    print("Is goal?", problem.goal_test(s9))
+    print("Solution:\n", s9.board, sep="")"""
+
+    """# Exemplo 4
+    board = Board.parse_instance_from_stdin()
+    problem = Takuzu(board)
+    goal_node = depth_first_tree_search(problem)
+    print("Is goal?", problem.goal_test(goal_node.state))
+    print("Solution: \n", goal_node.state.board, sep="")"""
