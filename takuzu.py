@@ -122,9 +122,7 @@ class Board:
 class Takuzu(Problem):
     def __init__(self, board: Board):
         """O construtor especifica o estado inicial."""
-        # NEW: self.current = board
-        self.initial = board
-        pass
+        self.initial = TakuzuState(board)
 
     def actions(self, state: TakuzuState):
         """Retorna uma lista de ações que podem ser executadas a
@@ -180,7 +178,6 @@ class Takuzu(Problem):
         
         board = state.board
         if (board.empty_cells != 0):
-            print("1")
             return False
         rows = set()
         columns = set()
@@ -196,13 +193,8 @@ class Takuzu(Problem):
             values = {0:-1, 1:1}
             for i in range(dim):
                 val = section[i]
-                # if val == 2: Não é suposto ser preciso porque se tiver vazios já acusou mal antes
-                #     return False
-                # else:
-                if val == previous:
-                    state += 1
-                else:
-                    state = 1
+                if val == previous: state += 1
+                else: state = 1
                 sum += values[val]
                 if state == 3:
                     return False
@@ -227,7 +219,6 @@ class Takuzu(Problem):
     def h(self, node: Node):
         """Função heuristica utilizada para a procura A*."""
         # TODO
-        # J: aceder ao node.state para ver o estado
         pass
 
     # TODO: outros metodos da classe
@@ -239,24 +230,30 @@ if __name__ == "__main__":  # Função main
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
-    """# Exemplo 1:
+
+    """
+    # Exemplo 1:
     board = Board.parse_instance_from_stdin()
     print("Initial:\n", board, sep="")
     print(board.adjacent_vertical_numbers(3,3))
     print(board.adjacent_horizontal_numbers(3,3))
     print(board.adjacent_vertical_numbers(1,1))
-    print(board.adjacent_horizontal_numbers(1,1))"""
+    print(board.adjacent_horizontal_numbers(1,1))
+    """
 
-    """# Exemplo 2:
+    """
+    # Exemplo 2:
     board = Board.parse_instance_from_stdin()
     print("Initial:\n", board, sep="")
     problem = Takuzu(board)
     initial_state = TakuzuState(board)
     print(initial_state.board.get_number(2, 2))
     result_state = problem.result(initial_state, (2, 2, 1))
-    print(result_state.board.get_number(2, 2))"""
+    print(result_state.board.get_number(2, 2))
+    """
 
-    """# Exemplo 3:
+    """
+    # Exemplo 3:
     board = Board.parse_instance_from_stdin()
     problem = Takuzu(board)
     s0 = TakuzuState(board)
@@ -271,11 +268,26 @@ if __name__ == "__main__":  # Função main
     s8 = problem.result(s7, (2, 3, 1))
     s9 = problem.result(s8, (3, 2, 0))
     print("Is goal?", problem.goal_test(s9))
-    print("Solution:\n", s9.board, sep="")"""
+    print("Solution:\n", s9.board, sep="")
+    """
 
-    """# Exemplo 4
+    """
+    # Exemplo 4:
     board = Board.parse_instance_from_stdin()
     problem = Takuzu(board)
-    goal_node = depth_first_tree_search(problem)
+    goal_node = depth_first_tree_search2(problem)
+
     print("Is goal?", problem.goal_test(goal_node.state))
-    print("Solution: \n", goal_node.state.board, sep="")"""
+    print("Solution: \n", goal_node.state.board, sep="")
+    """
+
+    # Exemplo NEW:
+    board = Board.parse_instance_from_stdin()
+    problem = Takuzu(board)
+    s0 = TakuzuState(board)
+    print("Initial:\n", s0.board, sep="")
+    s1 = problem.result(s0, (0, 0, 0))
+    print("Initial:\n", s1.board, sep="")
+    s2 = problem.result(s1, (0, 2, 1))
+    print("Initial:\n", s2.board, sep="")
+    print("Is goal?", problem.goal_test(s2))

@@ -207,6 +207,8 @@ def depth_first_tree_search(problem):
 
     while frontier:
         node = frontier.pop()
+        print("State ID: ", node.state.id) # NEW
+        print(node.state.board) # NEW
         if problem.goal_test(node.state):
             return node
         frontier.extend(node.expand(problem))
