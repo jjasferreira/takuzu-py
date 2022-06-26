@@ -19,7 +19,6 @@ from search import (
     depth_first_tree_search,
     greedy_search,
     recursive_best_first_search,
-    depth_first_graph_search,
 )
 
 
@@ -40,10 +39,11 @@ class TakuzuState:
 
 class Board:
     """Representação interna de um tabuleiro de Takuzu."""
-    def __init__(self, array, dim, empty_cells):
+    def __init__(self, array, dim, empty_cells_line, empty_cells_column):
         self.array = array
         self.dim = dim
-        self.empty_cells = empty_cells
+        self.empty_cells_line = empty_cells_line
+        self.empty_cells_column = empty_cells_column
 
     def __repr__(self):
         res = ""
@@ -105,18 +105,25 @@ class Board:
             # IDK: Isto faz split todas as iterações?
             mat.append([int(i) for i in input().split()])
 
-        empty_cells = 0
+        empty_cells_line = [dim] * dim
+        empty_cells_column = [dim] * dim
         for i in range(dim):
             for j in range(dim):
-                if mat[i][j] == 2:
-                    empty_cells += 1
+                if mat[i][j] != 2:
+                    empty_cells_line[i] -= 1
+                    empty_cells_column[j] -= 1
 
-        return Board(np.array(mat), dim, empty_cells)
+        return Board(np.array(mat), dim, empty_cells_line, empty_cells_column)
 
     def apply_action(self, action):
         array = np.copy(self.array)
         array[action[0]][action[1]] = action[2]
-        return Board(array, self.dim, self.empty_cells - 1)
+        empty_cells_line_cp = self.empty_cells_line.copy()
+        empty_cells_column_cp = self.empty_cells_column.copy()
+        empty_cells_line_cp[action[0]] -= 1
+        empty_cells_column_cp[action[1]] -= 1
+
+        return Board(array, self.dim, empty_cells_line_cp, empty_cells_column_cp)
 
     # TODO: outros metodos da classe
 
@@ -131,21 +138,68 @@ class Takuzu(Problem):
         partir do estado passado como argumento."""
         modes = ("previous", "following", "below", "above")
         board = state.board
+        empty_cells_line = state.board.empty_cells_line
+        empty_cells_column = state.board.empty_cells_column
+
+        # 01. Caso em que temos linhas/colunas com apenas 1 célula livre
+        for i in range(board.dim):
+            if empty_cells_line[i] == 1:
+                sum = 0
+                even = not board.dim % 2
+                pos = 0
+                for j in range(board.dim):
+                    n = board.get_number(i, j)
+                    if n == 2:
+                        pos = j
+                    else:
+                        sum += 1 if (n == 1) else (-1)
+                if even and sum == 1:
+                    return [(i, pos, 0)]
+                elif even and sum == -1:
+                    return [(i, pos, 1)]
+                elif not even and sum == 2:
+                    return [((i, pos, 0))]
+                elif not even and sum == -2:
+                    return [((i, pos, 1))]
+                elif not even and sum == 0:
+                    return [(i, pos, 0), (i, pos, 1)]
+            if empty_cells_column[i] == 1:
+                sum = 0
+                even = not board.dim%2
+                pos = 0
+                for j in range(board.dim):
+                    n = board.get_number(j, i)
+                    if n == 2:
+                        pos = j
+                    else:
+                        sum += 1 if (n == 1) else (-1)
+                if even and sum == 1:
+                    return [(pos, i, 0)]
+                elif even and sum == -1:
+                    return [(pos, i, 1)]
+                elif not even and sum == 2:
+                    return [((pos, i, 0))]
+                elif not even and sum == -2:
+                    return [((pos, i, 1))]
+                elif not even and sum == 0:
+                    return [(pos, i, 0), (pos, i, 1)]
+
+        # 02. Caso em que temos 2 células consecutivas iguais
         for i in range(board.dim):
             for j in range(board.dim):
                 if board.get_number(i, j) == 2:
-                    # Verificação dos 2 números consecutivos em todas as direções
                     for m in modes:
                         f = board.two_numbers(i, j, m)
                         if (f == (0, 0) or f == (1, 1)):
                             if (f[0] == 0): v = 1
                             elif (f[0] == 1): v = 0
                             return [(i, j, v)]
+
+        # 03. Caso em que vemos as células imediatamente adjacentes
         res = []
         for i in range(board.dim):
             for j in range(board.dim):
                 if board.get_number(i, j) == 2:
-                    # Verificação dos números imediatamente adjacentes em todas as direções
                     h = set()
                     hn = board.adjacent_horizontal_numbers(i, j)
                     if (hn == (0, 0)): h.add(1)
@@ -179,7 +233,7 @@ class Takuzu(Problem):
         estão preenchidas com uma sequência de números adjacentes."""
         
         board = state.board
-        if (board.empty_cells != 0):
+        if (sum(board.empty_cells_line) != 0):
             return False
         rows = set()
         columns = set()
@@ -253,7 +307,6 @@ if __name__ == "__main__":  # Função main
     result_state = problem.result(initial_state, (2, 2, 1))
     print(result_state.board.get_number(2, 2))
     """
-
     """
     # Exemplo 3:
     board = Board.parse_instance_from_stdin()
@@ -261,7 +314,6 @@ if __name__ == "__main__":  # Função main
     s0 = TakuzuState(board)
     print("Initial:\n", s0.board, sep="")
     s1 = problem.result(s0, (0, 0, 0))
-    print(problem.actions(s1))
     s2 = problem.result(s1, (0, 2, 1))
     s3 = problem.result(s2, (1, 0, 1))
     s4 = problem.result(s3, (1, 1, 0))
@@ -273,17 +325,14 @@ if __name__ == "__main__":  # Função main
     print("Is goal?", problem.goal_test(s9))
     print("Solution:\n", s9.board, sep="")
     """
-    
-    """
+
     # Exemplo 4:
     board = Board.parse_instance_from_stdin()
     problem = Takuzu(board)
     goal_node = depth_first_tree_search(problem)
-
     print("Is goal?", problem.goal_test(goal_node.state))
     print("Solution: \n", goal_node.state.board, sep="")
-    """
-
+    
     """
     # Exemplo NEW:
     board = Board.parse_instance_from_stdin()
@@ -298,28 +347,28 @@ if __name__ == "__main__":  # Função main
     """
 
     """
+    # Exemplo das Actions:
     board = Board.parse_instance_from_stdin()
     problem = Takuzu(board)
     s0 = TakuzuState(board)
     print("Initial:\n", s0.board, sep="")
     print(problem.actions(s0))
-    print(type(problem.result(s0, (3, 2, 0))))
-    s1 = problem.result(s0, (3, 2, 0))
+    s1 = problem.result(s0, (0, 0, 0))
     print(s1.board)
     print(problem.actions(s1))
-    s2 = problem.result(s1, (2, 2, 1))
+    s2 = problem.result(s1, (0, 1, 1))
     print(s2.board)
     print(problem.actions(s2))
-    s3 = problem.result(s2, (0, 0, 0))
+    s3 = problem.result(s2, (1, 2, 0))
     print(s3.board)
     print(problem.actions(s3))
     """
 
+    """
     # Resolução do problema
     board = Board.parse_instance_from_stdin()
     problem = Takuzu(board)
     goal_node = depth_first_tree_search(problem)
 
     print(goal_node.state.board)
-    
-    
+    """
