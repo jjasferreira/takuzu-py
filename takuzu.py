@@ -19,6 +19,7 @@ from search import (
     depth_first_tree_search,
     greedy_search,
     recursive_best_first_search,
+    depth_first_graph_search,
 )
 
 
@@ -49,7 +50,8 @@ class Board:
         for i in range(self.dim):
             for j in range(self.dim):
                 res += str(self.array[i, j]) + "\t"
-            res += "\n"
+            if (i < self.dim - 1):
+                res += "\n"
         return res
     
     def get_row(self, row: int) -> tuple:
@@ -112,7 +114,7 @@ class Board:
         return Board(np.array(mat), dim, empty_cells)
 
     def apply_action(self, action):
-        array = self.array
+        array = np.copy(self.array)
         array[action[0]][action[1]] = action[2]
         return Board(array, self.dim, self.empty_cells - 1)
 
@@ -138,7 +140,7 @@ class Takuzu(Problem):
                         if (f == (0, 0) or f == (1, 1)):
                             if (f[0] == 0): v = 1
                             elif (f[0] == 1): v = 0
-                            return [[i, j, v]]
+                            return [(i, j, v)]
         res = []
         for i in range(board.dim):
             for j in range(board.dim):
@@ -157,10 +159,10 @@ class Takuzu(Problem):
                     s = h.intersection(v)
                     l = len(s)
                     if (l == 1):
-                        return [[i, j, s.pop()]]
+                        return [(i, j, s.pop())]
                     elif (l == 2):
                         for k in s:
-                            res.append([i, j, k])
+                            res.append((i, j, k))
         return res
 
     def result(self, state: TakuzuState, action):
@@ -259,6 +261,7 @@ if __name__ == "__main__":  # Função main
     s0 = TakuzuState(board)
     print("Initial:\n", s0.board, sep="")
     s1 = problem.result(s0, (0, 0, 0))
+    print(problem.actions(s1))
     s2 = problem.result(s1, (0, 2, 1))
     s3 = problem.result(s2, (1, 0, 1))
     s4 = problem.result(s3, (1, 1, 0))
@@ -270,17 +273,18 @@ if __name__ == "__main__":  # Função main
     print("Is goal?", problem.goal_test(s9))
     print("Solution:\n", s9.board, sep="")
     """
-
+    
     """
     # Exemplo 4:
     board = Board.parse_instance_from_stdin()
     problem = Takuzu(board)
-    goal_node = depth_first_tree_search2(problem)
+    goal_node = depth_first_tree_search(problem)
 
     print("Is goal?", problem.goal_test(goal_node.state))
     print("Solution: \n", goal_node.state.board, sep="")
     """
 
+    """
     # Exemplo NEW:
     board = Board.parse_instance_from_stdin()
     problem = Takuzu(board)
@@ -291,3 +295,31 @@ if __name__ == "__main__":  # Função main
     s2 = problem.result(s1, (0, 2, 1))
     print("Initial:\n", s2.board, sep="")
     print("Is goal?", problem.goal_test(s2))
+    """
+
+    """
+    board = Board.parse_instance_from_stdin()
+    problem = Takuzu(board)
+    s0 = TakuzuState(board)
+    print("Initial:\n", s0.board, sep="")
+    print(problem.actions(s0))
+    print(type(problem.result(s0, (3, 2, 0))))
+    s1 = problem.result(s0, (3, 2, 0))
+    print(s1.board)
+    print(problem.actions(s1))
+    s2 = problem.result(s1, (2, 2, 1))
+    print(s2.board)
+    print(problem.actions(s2))
+    s3 = problem.result(s2, (0, 0, 0))
+    print(s3.board)
+    print(problem.actions(s3))
+    """
+
+    # Resolução do problema
+    board = Board.parse_instance_from_stdin()
+    problem = Takuzu(board)
+    goal_node = depth_first_tree_search(problem)
+
+    print(goal_node.state.board)
+    
+    
