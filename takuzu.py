@@ -3,11 +3,10 @@
 # 99251 João Nuno Cardoso
 # 99259 José João Ferreira
 
+from traceback import print_stack
 import numpy as np
 
 import sys
-
-from tomlkit import string
 from search import (
     Problem,
     Node,
@@ -46,7 +45,8 @@ class Board:
         res = ""
         for i in range(self.dim):
             for j in range(self.dim):
-                res += str(self.array[i, j]) + "\t"
+                if (i != self.dim-1 and j != self.dim-1 ):
+                    res += str(self.array[i, j]) + "\t"
             if (i < self.dim - 1):
                 res += "\n"
         return res
@@ -75,7 +75,7 @@ class Board:
         v2 = self.array[row, col + 1] if (col < self.dim - 1) else (None)
         return (v1, v2)
     
-    def two_numbers(self, row: int, col: int, mode: string) -> tuple:
+    def two_numbers(self, row: int, col: int, mode) -> tuple:
         """Devolve os dois valores imediatamente abaixo, acima, à esquerda ou à direita,
         dependendo da string argumento."""
         if (mode == "below"):
@@ -119,15 +119,14 @@ class Board:
     def apply_action(self, action):
         array = np.copy(self.array)
         array[action[0]][action[1]] = action[2]
-        new_row_tally = self.row_tally.copy()
-        new_col_tally = self.col_tally.copy()
+        new_row_tally = []
+        new_col_tally = []
+        for i in range(self.dim):
+            new_row_tally.append(self.row_tally[i].copy())
+            new_col_tally.append(self.col_tally[i].copy())
         new_row_tally[action[0]][action[2]] += 1
         new_col_tally[action[1]][action[2]] += 1
-
         return Board(array, self.dim, new_row_tally, new_col_tally)
-
-    # TODO: outros metodos da classe
-
 
 class Takuzu(Problem):
     def __init__(self, board: Board):
@@ -170,7 +169,7 @@ class Takuzu(Problem):
             ones = row_tally[i][1]
             # IDK: provisório?
             if (zeros >= dim/2 + 1 or ones >= dim/2 + 1):
-                print("Olha! \n Deu merda!")
+                # print("Olha! \n Deu merda!")
                 return []
             # Se só falta preencher uma célula
             if (zeros + ones == dim - 1):
@@ -201,7 +200,7 @@ class Takuzu(Problem):
             ones = col_tally[i][1]
             # IDK: provisório?
             if (zeros >= dim/2 + 1 or ones >= dim/2 + 1):
-                print("Olha! \n Deu merda!")
+                # print("Olha! \n Deu merda!")
                 return []
             # Se só falta preencher uma célula
             if (zeros + ones == dim - 1):
@@ -315,7 +314,7 @@ class Takuzu(Problem):
             if r in rows or c in cols:        
                 return False
             else:
-                if not valid_section(r, even) or not valid_section(c, even):            
+                if not valid_section(r, even) or not valid_section(c, even):
                     return False
                 rows.add(r)
                 cols.add(c)
@@ -375,14 +374,14 @@ if __name__ == "__main__":  # Função main
     print("Is goal?", problem.goal_test(s9))
     print("Solution:\n", s9.board, sep="")
     """
-
+    """
     # Exemplo 4:
     board = Board.parse_instance_from_stdin()
     problem = Takuzu(board)
     goal_node = depth_first_tree_search(problem)
     print("Is goal?", problem.goal_test(goal_node.state))
     print("Solution: \n", goal_node.state.board, sep="")
-
+    """
     """
     # Exemplo NEW:
     board = Board.parse_instance_from_stdin()
@@ -402,6 +401,8 @@ if __name__ == "__main__":  # Função main
     problem = Takuzu(board)
     s0 = TakuzuState(board)
     print("Initial:\n", s0.board, sep="")
+    print("Is goal?", problem.goal_test(s0))
+    
     print(problem.actions(s0))
     s1 = problem.result(s0, (0, 0, 0))
     print(s1.board)
@@ -413,12 +414,11 @@ if __name__ == "__main__":  # Função main
     print(s3.board)
     print(problem.actions(s3))
     """
-
-    """
+    
     # Resolução do problema
     board = Board.parse_instance_from_stdin()
     problem = Takuzu(board)
     goal_node = depth_first_tree_search(problem)
 
     print(goal_node.state.board)
-    """
+    
