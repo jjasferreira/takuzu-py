@@ -3,8 +3,13 @@
 # 99251 João Nuno Cardoso
 # 99259 José João Ferreira
 
-from traceback import print_stack
+# from traceback import print_stack
 import numpy as np
+
+# TODO REMOVER ANTES DE MOOSHAK!!!!!1!!!
+
+import time
+
 
 import sys
 from search import (
@@ -34,9 +39,10 @@ class TakuzuState:
 
 class Board:
     """Representação interna de um tabuleiro de Takuzu."""
-    def __init__(self, array, dim, row_tally, col_tally):
+    def __init__(self, array, dim, empty_cells, row_tally, col_tally):
         self.array = array
         self.dim = dim
+        self.empty_cells = empty_cells
         # Listas de listas de dimensão 2 que contêm o número de 0's e 1's, respetivamente
         self.row_tally = row_tally
         self.col_tally = col_tally
@@ -99,10 +105,10 @@ class Board:
         e retorna uma instância da classe Board."""
         mat = []
         dim = int(input())
-        for foo in range(dim):
-            # IDK: Isto faz split todas as iterações?
+        for f in range(dim):
             mat.append([int(i) for i in input().split()])
 
+        empty_cells = 0
         row_tally = []
         col_tally = []
         for i in range(dim):
@@ -112,14 +118,16 @@ class Board:
             for j in range(dim):
                 val = mat[i][j]
                 if val != 2:
+                    empty_cells += 1
                     row_tally[i][val] += 1
                     col_tally[j][val] += 1
 
-        return Board(np.array(mat), dim, row_tally, col_tally)
+        return Board(np.array(mat), dim, empty_cells, row_tally, col_tally)
 
     def apply_action(self, action):
         array = np.copy(self.array)
         array[action[0]][action[1]] = action[2]
+        new_empty_cells = self.empty_cells - 1
         new_row_tally = []
         new_col_tally = []
         for i in range(self.dim):
@@ -127,7 +135,7 @@ class Board:
             new_col_tally.append(self.col_tally[i].copy())
         new_row_tally[action[0]][action[2]] += 1
         new_col_tally[action[1]][action[2]] += 1
-        return Board(array, self.dim, new_row_tally, new_col_tally)
+        return Board(array, self.dim, new_empty_cells, new_row_tally, new_col_tally)
 
 class Takuzu(Problem):
     def __init__(self, board: Board):
@@ -163,14 +171,13 @@ class Takuzu(Problem):
                 return False
             return True
 
-        # 01. Caso em que analsamos linhas e colunas na sua totalidade
+        # 01. Caso em que analisamos linhas e colunas na sua totalidade
         # Por cada linha
         for i in range(dim):
             zeros = row_t[i][0]
             ones = row_t[i][1]
             # IDK: provisório?
             if (zeros >= dim/2 + 1 or ones >= dim/2 + 1):
-                # print("Olha! \n Deu merda!")
                 return []
             # Se só falta preencher uma célula
             if (zeros + ones == dim - 1):
@@ -180,7 +187,10 @@ class Takuzu(Problem):
                 # Se há um valor em maior número
                 if (zeros - ones != 0):
                     v = 1 if (zeros > ones) else (0)
-                    return [(i, p, v)]
+                    if check_adjacent(state, i, p, v) and check_two_numbers(state, i, p, v):
+                        return [(i, p, v)]
+                    else:
+                        return []
             # Se um dos números já está maximizado
             elif (zeros >= dim/2 or ones >= dim/2):
                 for j in range(dim):
@@ -201,7 +211,6 @@ class Takuzu(Problem):
             ones = col_t[i][1]
             # IDK: provisório?
             if (zeros >= dim/2 + 1 or ones >= dim/2 + 1):
-                # print("Olha! \n Deu merda!")
                 return []
             # Se só falta preencher uma célula
             if (zeros + ones == dim - 1):
@@ -211,7 +220,10 @@ class Takuzu(Problem):
                 # Se há um valor em maior número
                 if (zeros - ones != 0):
                     v = 1 if (zeros > ones) else (0)
-                    return [(p, i, v)]
+                    if check_adjacent(state, p, i, v) and check_two_numbers(state, p, i, v):
+                        return [(p, i, v)]
+                    else:
+                        return []
                 # O caso em que o tabuleiro é ímpar e há um número igual de 1's e 0's
                 # permite as duas jogadas, pelo que não vale a pena considerá-lo aqui
                 
@@ -260,7 +272,7 @@ class Takuzu(Problem):
                     s = h.intersection(v)
                     l = len(s)
                     if (l == 1):
-                        return [(i, j, s.pop())]
+                        hhreturn [(i, j, s.pop())]
                     elif (l == 2):
                         for k in s:
                             res.append((i, j, k))
@@ -294,6 +306,7 @@ class Takuzu(Problem):
                     else:
                         res.append((i, j, 0))
                         res.append((i, j, 1))
+        print(board) # erase
         return res
 
     def result(self, state: TakuzuState, action):
@@ -310,16 +323,20 @@ class Takuzu(Problem):
         estão preenchidas com uma sequência de números adjacentes."""
         
         board = state.board
+
+        row_t = board.row_tally
+        col_t = board.col_tally
         dim = board.dim
         # Se a some de 0's e 1's para cada linha é menor que a dimensão do
         # tabuleiro, então o tabuleiro ainda tem células vazias
         for i in range(dim):
-            if sum(board.row_tally[i]) != dim:
+            if sum(row_t[i]) != dim:
                 return False
         rows = set()
         cols = set()
         even = (dim % 2 == 0)
 
+    
         def valid_section(section, even):
             """Decide se uma linha ou coluna de um tabuleiro é válida"""
             previous = None
@@ -339,15 +356,24 @@ class Takuzu(Problem):
                 return (sum==0)
             else:
                 return (abs(sum) == 1)
-
+            
+        #b1 = True
+        #b2 = True
         for i in range(dim):
             r = board.get_row(i)
-            c = board.get_column(i)    
-            if r in rows or c in cols:        
+            c = board.get_column(i)
+            if r in rows or c in cols:
                 return False
             else:
-                if not valid_section(r, even) or not valid_section(c, even):
+                if row_t[i][0] >= dim/2 + 1 or row_t[i][1] >= dim/2 + 1 or \
+                    col_t[i][0] >= dim/2 + 1 or col_t[i][1] >= dim/2 + 1:
                     return False
+                #if not valid_section(r, even) or not valid_section(c, even):
+                #    b2 = False
+                #if b1 != b2:
+                #    print(board)
+                #    print("Merda")
+                #    exit(1)
                 rows.add(r)
                 cols.add(c)
         return True
@@ -382,7 +408,7 @@ class Takuzu(Problem):
 
 
 if __name__ == "__main__":  # Função main
-
+    start_time = time.time()
     # Resolução do problema
     board = Board.parse_instance_from_stdin()
     dim = board.dim
@@ -399,6 +425,8 @@ if __name__ == "__main__":  # Função main
         # print("- DFS:")
         goal_node = depth_first_tree_search(problem)
 
+    # print("Cagalhao\n\n\n\n")
+    #print("--- %s seconds ---" % (time.time() - start_time))
     print(goal_node.state.board)
 
     """

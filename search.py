@@ -94,8 +94,8 @@ class Node:
     def expand(self, problem):
         """List the nodes reachable in one step from this node."""
         """
-        print(problem.actions(self.state))  # NEW
         """
+        print(problem.actions(self.state))  # NEW
         return [self.child_node(problem, action)
                 for action in problem.actions(self.state)]
 
@@ -205,19 +205,21 @@ def depth_first_tree_search(problem):
     The argument frontier should be an empty queue.
     Repeats infinitely in case of loops.
     """
+    try:
+        frontier = [Node(problem.initial)]  # Stack
 
-    frontier = [Node(problem.initial)]  # Stack
-
-    while frontier:
-        node = frontier.pop()
-        """
-        print("==============================") # NEW
-        print("State ID: ", node.state.id) # NEW
+        while frontier:
+            node = frontier.pop()
+            sys.stdout.flush() # NEW
+            print("State ID: ", node.state.id) # NEW
+            sys.stdout.flush() # NEW
+            if problem.goal_test(node.state):
+                return node
+            frontier.extend(node.expand(problem))
+    except KeyboardInterrupt:
         print(node.state.board) # NEW
-        """
-        if problem.goal_test(node.state):
-            return node
-        frontier.extend(node.expand(problem))
+        sys.stdout.flush() # NEW
+        exit(1)
     return None
 
 
