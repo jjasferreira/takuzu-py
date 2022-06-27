@@ -39,11 +39,12 @@ class TakuzuState:
 
 class Board:
     """Representação interna de um tabuleiro de Takuzu."""
-    def __init__(self, array, dim, empty_cells_line, empty_cells_column):
+    def __init__(self, array, dim, line_tally, column_tally):
         self.array = array
         self.dim = dim
-        self.empty_cells_line = empty_cells_line
-        self.empty_cells_column = empty_cells_column
+        # Listas de listas de dimensão 2 que contêm o número de 0's e 1's, respetivamente
+        self.line_tally = line_tally
+        self.column_tally = column_tally
 
     def __repr__(self):
         res = ""
@@ -105,28 +106,31 @@ class Board:
             # IDK: Isto faz split todas as iterações?
             mat.append([int(i) for i in input().split()])
 
-        empty_cells_line = [dim] * dim
-        empty_cells_column = [dim] * dim
+        line_tally = []
+        column_tally = []
+        for i in range(dim):
+            line_tally.append([0, 0])
+            column_tally.append([0, 0])
         for i in range(dim):
             for j in range(dim):
-                if mat[i][j] != 2:
-                    empty_cells_line[i] -= 1
-                    empty_cells_column[j] -= 1
+                val = mat[i][j]
+                if val != 2:
+                    line_tally[i][val] += 1
+                    column_tally[j][val] += 1
 
-        return Board(np.array(mat), dim, empty_cells_line, empty_cells_column)
+        return Board(np.array(mat), dim, line_tally, column_tally)
 
     def apply_action(self, action):
         array = np.copy(self.array)
         array[action[0]][action[1]] = action[2]
-        empty_cells_line_cp = self.empty_cells_line.copy()
-        empty_cells_column_cp = self.empty_cells_column.copy()
-        empty_cells_line_cp[action[0]] -= 1
-        empty_cells_column_cp[action[1]] -= 1
+        new_line_tally = self.line_tally.copy()
+        new_column_tally = self.column_tally.copy()
+        new_line_tally[action[0]][action[2]] += 1
+        new_column_tally[action[1]][action[2]] += 1
 
-        return Board(array, self.dim, empty_cells_line_cp, empty_cells_column_cp)
+        return Board(array, self.dim, new_line_tally, new_column_tally)
 
     # TODO: outros metodos da classe
-
 
 class Takuzu(Problem):
     def __init__(self, board: Board):
@@ -138,51 +142,95 @@ class Takuzu(Problem):
         partir do estado passado como argumento."""
         modes = ("previous", "following", "below", "above")
         board = state.board
-        empty_cells_line = state.board.empty_cells_line
-        empty_cells_column = state.board.empty_cells_column
+        dim = board.dim
+        line_tally = board.line_tally
+        column_tally = board.column_tally
+        
+        def check_two_numbers(self, state: TakuzuState, l: int, c: int, v: int):
+            """Retorna verdadeiro se for possível colocar "v"
+            na célula com linha "l" e coluna "c", com base nos dois valores
+            imediatamente ao lado em todos os sentidos."""
+            for m in ("previous", "following", "below", "above"):
+                f = state.board.two_numbers(l, c, m)
+                if (f == (v, v)):
+                    return False
+            return True
+    
+        def check_adjacent(self, state: TakuzuState, l: int, c: int, v: int):
+            """Retorna verdadeiro se for possível colocar "v"
+            na célula com linha "l" e coluna "c", com base nos
+            valores adjacentes nas duas direções"""
+            hori = state.board.adjacent_horizontal_numbers(l, c)
+            vert = state.board.adjacent_vertical_numbers(l, c)
+            if (hori == (v, v) or vert == (v, v)):
+                return False
+            return True
 
-        # 01. Caso em que temos linhas/colunas com apenas 1 célula livre
-        for i in range(board.dim):
-            if empty_cells_line[i] == 1:
-                sum = 0
-                even = not board.dim % 2
-                pos = 0
-                for j in range(board.dim):
+        # Por cada linha
+        for i in range(dim):
+            zeros = line_tally[i][0]
+            ones = line_tally[i][1]
+            # IDK provisório:
+            if (zeros >= dim/2 + 1 or ones >= dim/2 + 1):
+                print("Olha! \n Deu merda!")
+                return []
+            # Se só falta preencher uma célula
+            if (zeros + ones == dim - 1):
+                for j in range(dim):
+                    if (board.get_number(i, j) == 2):
+                        p = j
+                # Se há um valor em maior número
+                if (zeros - ones != 0):
+                    v = 1 if (zeros > ones) else (0)
+                    return [(i, p, v)]
+            # Se um dos números já está maximizado
+            elif (zeros >= dim/2 or ones >= dim/2):
+                for j in range(dim):
                     n = board.get_number(i, j)
-                    if n == 2:
-                        pos = j
-                    else:
-                        sum += 1 if (n == 1) else (-1)
-                if even and sum == 1:
-                    return [(i, pos, 0)]
-                elif even and sum == -1:
-                    return [(i, pos, 1)]
-                elif not even and sum == 2:
-                    return [((i, pos, 0))]
-                elif not even and sum == -2:
-                    return [((i, pos, 1))]
-                elif not even and sum == 0:
-                    return [(i, pos, 0), (i, pos, 1)]
-            if empty_cells_column[i] == 1:
-                sum = 0
-                even = not board.dim%2
-                pos = 0
-                for j in range(board.dim):
+                    # Encontrar primeira célula vazia
+                    if (n == 2):
+                        # Tentar atribuir-lhe o valor em menor número
+                        v = 1 if (zeros > ones) else (0)
+                        # Se for possível
+                        if (check_two_numbers(self, state, i, j, v) and check_adjacent(self, state, i, j, v)):
+                            return [(i, j, v)]
+                        # Caso contrário
+                        else:
+                            return []
+        # Por cada coluna                
+        for i in range(dim):
+            zeros = column_tally[i][0]
+            ones = column_tally[i][1]
+            # IDK provisório:
+            if (zeros >= dim/2 + 1 or ones >= dim/2 + 1):
+                print("Olha! \n Deu merda!")
+                return []
+            # Se só falta preencher uma célula
+            if (zeros + ones == dim - 1):
+                for j in range(dim):
+                    if (board.get_number(j, i) == 2):
+                        p = j
+                # Se há um valor em maior número
+                if (zeros - ones != 0):
+                    v = 1 if (zeros > ones) else (0)
+                    return [(p, i, v)]
+                # O caso em que o tabuleiro é ímpar e há um número igual de 1's e 0's
+                # permite as duas jogadas, pelo que não vale a pena considerá-lo aqui
+                
+            # Se um dos números já está maximizado
+            elif (zeros >= dim/2 or ones >= dim/2):
+                for j in range(dim):
                     n = board.get_number(j, i)
-                    if n == 2:
-                        pos = j
-                    else:
-                        sum += 1 if (n == 1) else (-1)
-                if even and sum == 1:
-                    return [(pos, i, 0)]
-                elif even and sum == -1:
-                    return [(pos, i, 1)]
-                elif not even and sum == 2:
-                    return [((pos, i, 0))]
-                elif not even and sum == -2:
-                    return [((pos, i, 1))]
-                elif not even and sum == 0:
-                    return [(pos, i, 0), (pos, i, 1)]
+                    # Encontrar primeira célula vazia
+                    if (n == 2):
+                        # Tentar atribuir-lhe o valor em menor número
+                        v = 1 if (zeros > ones) else (0)
+                        # Se for possível
+                        if (check_two_numbers(self, state, j, i, v) and check_adjacent(self, state, j, i, v)):
+                            return [(j, i, v)]
+                        # Caso contrário
+                        else:
+                            return []
 
         # 02. Caso em que temos 2 células consecutivas iguais
         for i in range(board.dim):
@@ -233,11 +281,13 @@ class Takuzu(Problem):
         estão preenchidas com uma sequência de números adjacentes."""
         
         board = state.board
-        if (sum(board.empty_cells_line) != 0):
-            return False
+        dim = board.dim
+        # If the sum of 1's and 0's for any line is less than the dimension, then the board has empty cells
+        for i in range(dim):
+            if sum(board.line_tally[i]) != dim:
+                return False
         rows = set()
         columns = set()
-        dim = board.dim
         even = (dim % 2 == 0)
 
         def valid_section(section, even):
@@ -307,6 +357,7 @@ if __name__ == "__main__":  # Função main
     result_state = problem.result(initial_state, (2, 2, 1))
     print(result_state.board.get_number(2, 2))
     """
+
     """
     # Exemplo 3:
     board = Board.parse_instance_from_stdin()
@@ -332,7 +383,7 @@ if __name__ == "__main__":  # Função main
     goal_node = depth_first_tree_search(problem)
     print("Is goal?", problem.goal_test(goal_node.state))
     print("Solution: \n", goal_node.state.board, sep="")
-    
+
     """
     # Exemplo NEW:
     board = Board.parse_instance_from_stdin()
@@ -371,4 +422,17 @@ if __name__ == "__main__":  # Função main
     goal_node = depth_first_tree_search(problem)
 
     print(goal_node.state.board)
+    """
+    """
+    # Exemplo DEBUG:
+    board = Board.parse_instance_from_stdin()
+    problem = Takuzu(board)
+    s0 = TakuzuState(board)
+    print("Initial:\n", s0.board, sep="")
+    print(s0.board.column_tally)
+    print(s0.board.line_tally)
+    s1 = problem.result(s0, (7, 0, 0))
+    print("Result:\n", s1.board, sep="")
+    print(s1.board.column_tally)
+    print(s1.board.line_tally)
     """
