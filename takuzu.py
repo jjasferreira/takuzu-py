@@ -45,8 +45,9 @@ class Board:
         res = ""
         for i in range(self.dim):
             for j in range(self.dim):
-                if (i != self.dim-1 and j != self.dim-1 ):
-                    res += str(self.array[i, j]) + "\t"
+                res += str(self.array[i, j])
+                if (j < self.dim - 1):
+                    res += "\t"
             if (i < self.dim - 1):
                 res += "\n"
         return res
