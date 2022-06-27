@@ -214,8 +214,6 @@ def depth_first_tree_search(problem):
         print("==============================") # NEW
         print("State ID: ", node.state.id) # NEW
         print(node.state.board) # NEW
-        print(node.state.board.row_tally) # NEW
-        print(node.state.board.col_tally) # NEW
         """
         if problem.goal_test(node.state):
             return node
@@ -282,6 +280,11 @@ def best_first_graph_search(problem, f, display=False):
     explored = set()
     while frontier:
         node = frontier.pop()
+        """
+        print("==============================") # NEW
+        print("State ID: ", node.state.id) # NEW
+        print(node.state.board) # NEW
+        """
         if problem.goal_test(node.state):
             if display:
                 print(len(explored), "paths have been expanded and", len(frontier), "paths remain in the frontier")

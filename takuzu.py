@@ -140,10 +140,10 @@ class Takuzu(Problem):
         modes = ("previous", "following", "below", "above")
         board = state.board
         dim = board.dim
-        row_tally = board.row_tally
-        col_tally = board.col_tally
+        row_t = board.row_tally
+        col_t = board.col_tally
         
-        def check_two_numbers(self, state: TakuzuState, l: int, c: int, v: int):
+        def check_two_numbers(state: TakuzuState, l: int, c: int, v: int):
             """Retorna verdadeiro se for possível colocar "v"
             na célula com linha "l" e coluna "c", com base nos dois valores
             imediatamente ao lado em todos os sentidos."""
@@ -153,7 +153,7 @@ class Takuzu(Problem):
                     return False
             return True
     
-        def check_adjacent(self, state: TakuzuState, l: int, c: int, v: int):
+        def check_adjacent(state: TakuzuState, l: int, c: int, v: int):
             """Retorna verdadeiro se for possível colocar "v"
             na célula com linha "l" e coluna "c", com base nos
             valores adjacentes nas duas direções"""
@@ -166,8 +166,8 @@ class Takuzu(Problem):
         # 01. Caso em que analsamos linhas e colunas na sua totalidade
         # Por cada linha
         for i in range(dim):
-            zeros = row_tally[i][0]
-            ones = row_tally[i][1]
+            zeros = row_t[i][0]
+            ones = row_t[i][1]
             # IDK: provisório?
             if (zeros >= dim/2 + 1 or ones >= dim/2 + 1):
                 # print("Olha! \n Deu merda!")
@@ -190,15 +190,15 @@ class Takuzu(Problem):
                         # Tentar atribuir-lhe o valor em menor número
                         v = 1 if (zeros > ones) else (0)
                         # Se for possível
-                        if (check_two_numbers(self, state, i, j, v) and check_adjacent(self, state, i, j, v)):
+                        if (check_two_numbers(state, i, j, v) and check_adjacent(state, i, j, v)):
                             return [(i, j, v)]
                         # Caso contrário
                         else:
                             return []
         # Por cada coluna                
         for i in range(dim):
-            zeros = col_tally[i][0]
-            ones = col_tally[i][1]
+            zeros = col_t[i][0]
+            ones = col_t[i][1]
             # IDK: provisório?
             if (zeros >= dim/2 + 1 or ones >= dim/2 + 1):
                 # print("Olha! \n Deu merda!")
@@ -224,27 +224,28 @@ class Takuzu(Problem):
                         # Tentar atribuir-lhe o valor em menor número
                         v = 1 if (zeros > ones) else (0)
                         # Se for possível
-                        if (check_two_numbers(self, state, j, i, v) and check_adjacent(self, state, j, i, v)):
+                        if (check_two_numbers(state, j, i, v) and check_adjacent(state, j, i, v)):
                             return [(j, i, v)]
                         # Caso contrário
                         else:
                             return []
 
         # 02. Caso em que temos 2 células consecutivas iguais
-        for i in range(board.dim):
-            for j in range(board.dim):
+        for i in range(dim):
+            for j in range(dim):
                 if board.get_number(i, j) == 2:
                     for m in modes:
-                        f = board.two_numbers(i, j, m)
-                        if (f == (0, 0) or f == (1, 1)):
-                            if (f[0] == 0): v = 1
-                            elif (f[0] == 1): v = 0
-                            return [(i, j, v)]
+                        t = board.two_numbers(i, j, m)
+                        if (t == (0, 0)):
+                            return [(i, j, 1)]
+                        elif (t == (1, 1)):
+                            return [(i, j, 0)]
 
-        # 03. Caso em que vemos as células imediatamente adjacentes
+        """
+        # DEPRECATED 03. Caso em que vemos as células imediatamente adjacentes
         res = []
-        for i in range(board.dim):
-            for j in range(board.dim):
+        for i in range(dim):
+            for j in range(dim):
                 if board.get_number(i, j) == 2:
                     h = set()
                     hn = board.adjacent_horizontal_numbers(i, j)
@@ -263,6 +264,36 @@ class Takuzu(Problem):
                     elif (l == 2):
                         for k in s:
                             res.append((i, j, k))
+        return res
+        """
+        # 03. Caso em que vemos as células imediatamente adjacentes
+        for i in range(dim):
+            for j in range(dim):
+                if board.get_number(i, j) == 2:
+                    h = board.adjacent_horizontal_numbers(i, j)
+                    v = board.adjacent_vertical_numbers(i, j)
+                    # Se houver alguma dupla igual, a escolha é óbvia
+                    if (h == (0, 0) or v == (0, 0)):
+                        return [(i, j, 1)]
+                    if (h == (1, 1) or v == (1, 1)):
+                        return [(i, j, 0)]
+        
+        # 04. Caso em que nada sabemos e damos prioridade ao número menos presente na linha e coluna
+        res = []
+        for i in range(dim):
+            for j in range(dim):
+                if board.get_number(i, j) == 2:
+                    if (row_t[i][0] > row_t[i][1] and col_t[j][0] >= col_t[j][1]) or \
+                        (row_t[i][0] >= row_t[i][1] and col_t[j][0] > col_t[j][1]):
+                            res.insert(0, (i, j, 1))
+                            res.append((i, j, 0))
+                    elif (row_t[i][0] < row_t[i][1] and col_t[j][0] <= col_t[j][1]) or \
+                        (row_t[i][0] <= row_t[i][1] and col_t[j][0] < col_t[j][1]):
+                            res.insert(0, (i, j, 0))
+                            res.append((i, j, 1))
+                    else:
+                        res.append((i, j, 0))
+                        res.append((i, j, 1))
         return res
 
     def result(self, state: TakuzuState, action):
@@ -323,18 +354,52 @@ class Takuzu(Problem):
 
     def h(self, node: Node):
         """Função heuristica utilizada para a procura A*."""
-        # TODO
-        pass
+        heuristic = 0
+        c = 0
+        board = node.state.board
+        dim = board.dim
+
+        # IDK 1: Porque não guardar no state/board a última casa preenchida? Assim, nem temos que fazer
+        # 2 loops porque os boards-filho são todos iguais tirando uma casa (conseguimos isto ao atribuir a heuristica a
+        # uma variavel do TakuzuState. Assim visitamos a do pai e só subtraimos/somamos o necessário)
+
+        # IDK 2: Caso queiramos adicionar outra cena: h = a*heuristica1 + b*heuristica2 (com 0 < a,b <= 1)
+
+        # IDK 3: É preciso garantir consistência da heurística (e que é sempre menor
+        # que a distância ao objetivo, para garantir otimalidade na procura A*) ?
+
+        for i in range(dim):
+            for j in range(dim):
+                for m in ("previous", "following", "below", "above"):
+                    t = board.two_numbers(i, j, m)
+                    for value in t:
+                        if value == 2:
+                            c += 1
+        heuristic += (c / dim**2)
+        return heuristic
 
     # TODO: outros metodos da classe
 
 
 if __name__ == "__main__":  # Função main
-    # TODO:
-    # Ler o ficheiro do standard input,
-    # Usar uma técnica de procura para resolver a instância,
-    # Retirar a solução a partir do nó resultante,
-    # Imprimir para o standard output no formato indicado.
+
+    # Resolução do problema
+    board = Board.parse_instance_from_stdin()
+    dim = board.dim
+    problem = Takuzu(board)
+    c = 0
+    for i in range(dim):
+        c += sum(board.row_tally[i])
+    # Se o número de células preenchidas < metade, aplicar A*
+    if (c < (dim**2)/2):
+        # print("- Greedy:") # IDK 5: Devíamos mudar para a A*?
+        goal_node = greedy_search(problem, problem.h)
+    # Caso contrário, aplicar a procura DFS
+    else:
+        # print("- DFS:")
+        goal_node = depth_first_tree_search(problem)
+
+    print(goal_node.state.board)
 
     """
     # Exemplo 1:
@@ -375,6 +440,7 @@ if __name__ == "__main__":  # Função main
     print("Is goal?", problem.goal_test(s9))
     print("Solution:\n", s9.board, sep="")
     """
+
     """
     # Exemplo 4:
     board = Board.parse_instance_from_stdin()
@@ -382,18 +448,6 @@ if __name__ == "__main__":  # Função main
     goal_node = depth_first_tree_search(problem)
     print("Is goal?", problem.goal_test(goal_node.state))
     print("Solution: \n", goal_node.state.board, sep="")
-    """
-    """
-    # Exemplo NEW:
-    board = Board.parse_instance_from_stdin()
-    problem = Takuzu(board)
-    s0 = TakuzuState(board)
-    print("Initial:\n", s0.board, sep="")
-    s1 = problem.result(s0, (0, 0, 0))
-    print("Initial:\n", s1.board, sep="")
-    s2 = problem.result(s1, (0, 2, 1))
-    print("Initial:\n", s2.board, sep="")
-    print("Is goal?", problem.goal_test(s2))
     """
 
     """
@@ -403,7 +457,6 @@ if __name__ == "__main__":  # Função main
     s0 = TakuzuState(board)
     print("Initial:\n", s0.board, sep="")
     print("Is goal?", problem.goal_test(s0))
-    
     print(problem.actions(s0))
     s1 = problem.result(s0, (0, 0, 0))
     print(s1.board)
@@ -415,11 +468,11 @@ if __name__ == "__main__":  # Função main
     print(s3.board)
     print(problem.actions(s3))
     """
-    
-    # Resolução do problema
+
+    """
+    # Exemplo heurísticas
     board = Board.parse_instance_from_stdin()
     problem = Takuzu(board)
-    goal_node = depth_first_tree_search(problem)
-
-    print(goal_node.state.board)
-    
+    s0 = TakuzuState(board)
+    print(problem.h(Node(s0)))
+    """
