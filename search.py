@@ -211,8 +211,8 @@ def depth_first_tree_search(problem):
         print("==============================") # NEW
         print("State ID: ", node.state.id) # NEW
         print(node.state.board) # NEW
-        print(node.state.board.line_tally) # NEW
-        print(node.state.board.column_tally) # NEW
+        print(node.state.board.row_tally) # NEW
+        print(node.state.board.col_tally) # NEW
         if problem.goal_test(node.state):
             return node
         frontier.extend(node.expand(problem))
