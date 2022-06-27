@@ -3,13 +3,7 @@
 # 99251 João Nuno Cardoso
 # 99259 José João Ferreira
 
-# from traceback import print_stack
 import numpy as np
-
-# TODO REMOVER ANTES DE MOOSHAK!!!!!1!!!
-
-import time
-
 
 import sys
 from search import (
@@ -33,8 +27,6 @@ class TakuzuState:
 
     def __lt__(self, other):
         return self.id < other.id
-
-    # TODO: outros metodos da classe
 
 
 class Board:
@@ -107,7 +99,6 @@ class Board:
         dim = int(input())
         for f in range(dim):
             mat.append([int(i) for i in input().split()])
-
         empty_cells = 0
         row_tally = []
         col_tally = []
@@ -121,7 +112,6 @@ class Board:
                     empty_cells += 1
                     row_tally[i][val] += 1
                     col_tally[j][val] += 1
-
         return Board(np.array(mat), dim, empty_cells, row_tally, col_tally)
 
     def apply_action(self, action):
@@ -253,31 +243,7 @@ class Takuzu(Problem):
                         elif (t == (1, 1)):
                             return [(i, j, 0)]
 
-        """
-        # DEPRECATED 03. Caso em que vemos as células imediatamente adjacentes
-        res = []
-        for i in range(dim):
-            for j in range(dim):
-                if board.get_number(i, j) == 2:
-                    h = set()
-                    hn = board.adjacent_horizontal_numbers(i, j)
-                    if (hn == (0, 0)): h.add(1)
-                    elif (hn == (1, 1)): h.add(0)
-                    else: h.update([0,1])
-                    v = set()
-                    vn = board.adjacent_vertical_numbers(i, j)
-                    if (vn == (0, 0)): v.add(1)
-                    elif (vn == (1, 1)): v.add(0)
-                    else: v.update([0,1])
-                    s = h.intersection(v)
-                    l = len(s)
-                    if (l == 1):
-                        hhreturn [(i, j, s.pop())]
-                    elif (l == 2):
-                        for k in s:
-                            res.append((i, j, k))
-        return res
-        """
+        
         # 03. Caso em que vemos as células imediatamente adjacentes
         for i in range(dim):
             for j in range(dim):
@@ -297,16 +263,12 @@ class Takuzu(Problem):
                 if board.get_number(i, j) == 2:
                     if (row_t[i][0] > row_t[i][1] and col_t[j][0] >= col_t[j][1]) or \
                         (row_t[i][0] >= row_t[i][1] and col_t[j][0] > col_t[j][1]):
-                            res.insert(0, (i, j, 1))
-                            res.append((i, j, 0))
+                            return [(i, j, 1), (i, j, 0)]
                     elif (row_t[i][0] < row_t[i][1] and col_t[j][0] <= col_t[j][1]) or \
                         (row_t[i][0] <= row_t[i][1] and col_t[j][0] < col_t[j][1]):
-                            res.insert(0, (i, j, 0))
-                            res.append((i, j, 1))
+                            return [(i, j, 0), (i, j, 1)]
                     else:
-                        res.append((i, j, 0))
-                        res.append((i, j, 1))
-        print(board) # erase
+                        return [(i, j, 0), (i, j, 1)]
         return res
 
     def result(self, state: TakuzuState, action):
@@ -334,31 +296,7 @@ class Takuzu(Problem):
                 return False
         rows = set()
         cols = set()
-        even = (dim % 2 == 0)
 
-    
-        def valid_section(section, even):
-            """Decide se uma linha ou coluna de um tabuleiro é válida"""
-            previous = None
-            # Número de jogadas sucessivas
-            state = 0 # Conta o número sucessivo de um tipo de peça
-            sum = 0 # Balanço
-            values = {0:-1, 1:1}
-            for i in range(dim):
-                val = section[i]
-                if val == previous: state += 1
-                else: state = 1
-                sum += values[val]
-                if state == 3:
-                    return False
-                previous = val
-            if even:
-                return (sum==0)
-            else:
-                return (abs(sum) == 1)
-            
-        #b1 = True
-        #b2 = True
         for i in range(dim):
             r = board.get_row(i)
             c = board.get_column(i)
@@ -368,12 +306,6 @@ class Takuzu(Problem):
                 if row_t[i][0] >= dim/2 + 1 or row_t[i][1] >= dim/2 + 1 or \
                     col_t[i][0] >= dim/2 + 1 or col_t[i][1] >= dim/2 + 1:
                     return False
-                #if not valid_section(r, even) or not valid_section(c, even):
-                #    b2 = False
-                #if b1 != b2:
-                #    print(board)
-                #    print("Merda")
-                #    exit(1)
                 rows.add(r)
                 cols.add(c)
         return True
@@ -384,15 +316,6 @@ class Takuzu(Problem):
         c = 0
         board = node.state.board
         dim = board.dim
-
-        # IDK 1: Porque não guardar no state/board a última casa preenchida? Assim, nem temos que fazer
-        # 2 loops porque os boards-filho são todos iguais tirando uma casa (conseguimos isto ao atribuir a heuristica a
-        # uma variavel do TakuzuState. Assim visitamos a do pai e só subtraimos/somamos o necessário)
-
-        # IDK 2: Caso queiramos adicionar outra cena: h = a*heuristica1 + b*heuristica2 (com 0 < a,b <= 1)
-
-        # IDK 3: É preciso garantir consistência da heurística (e que é sempre menor
-        # que a distância ao objetivo, para garantir otimalidade na procura A*) ?
 
         for i in range(dim):
             for j in range(dim):
@@ -408,7 +331,6 @@ class Takuzu(Problem):
 
 
 if __name__ == "__main__":  # Função main
-    start_time = time.time()
     # Resolução do problema
     board = Board.parse_instance_from_stdin()
     dim = board.dim
@@ -418,89 +340,8 @@ if __name__ == "__main__":  # Função main
         c += sum(board.row_tally[i])
     # Se o número de células preenchidas < metade, aplicar A*
     if (c < (dim**2)/2):
-        # print("- Greedy:") # IDK 5: Devíamos mudar para a A*?
         goal_node = greedy_search(problem, problem.h)
     # Caso contrário, aplicar a procura DFS
     else:
-        # print("- DFS:")
         goal_node = depth_first_tree_search(problem)
-
-    # print("Cagalhao\n\n\n\n")
-    #print("--- %s seconds ---" % (time.time() - start_time))
     print(goal_node.state.board)
-
-    """
-    # Exemplo 1:
-    board = Board.parse_instance_from_stdin()
-    print("Initial:\n", board, sep="")
-    print(board.adjacent_vertical_numbers(3,3))
-    print(board.adjacent_horizontal_numbers(3,3))
-    print(board.adjacent_vertical_numbers(1,1))
-    print(board.adjacent_horizontal_numbers(1,1))
-    """
-
-    """
-    # Exemplo 2:
-    board = Board.parse_instance_from_stdin()
-    print("Initial:\n", board, sep="")
-    problem = Takuzu(board)
-    initial_state = TakuzuState(board)
-    print(initial_state.board.get_number(2, 2))
-    result_state = problem.result(initial_state, (2, 2, 1))
-    print(result_state.board.get_number(2, 2))
-    """
-
-    """
-    # Exemplo 3:
-    board = Board.parse_instance_from_stdin()
-    problem = Takuzu(board)
-    s0 = TakuzuState(board)
-    print("Initial:\n", s0.board, sep="")
-    s1 = problem.result(s0, (0, 0, 0))
-    s2 = problem.result(s1, (0, 2, 1))
-    s3 = problem.result(s2, (1, 0, 1))
-    s4 = problem.result(s3, (1, 1, 0))
-    s5 = problem.result(s4, (1, 3, 1))
-    s6 = problem.result(s5, (2, 0, 0))
-    s7 = problem.result(s6, (2, 2, 1))
-    s8 = problem.result(s7, (2, 3, 1))
-    s9 = problem.result(s8, (3, 2, 0))
-    print("Is goal?", problem.goal_test(s9))
-    print("Solution:\n", s9.board, sep="")
-    """
-
-    """
-    # Exemplo 4:
-    board = Board.parse_instance_from_stdin()
-    problem = Takuzu(board)
-    goal_node = depth_first_tree_search(problem)
-    print("Is goal?", problem.goal_test(goal_node.state))
-    print("Solution: \n", goal_node.state.board, sep="")
-    """
-
-    """
-    # Exemplo das Actions:
-    board = Board.parse_instance_from_stdin()
-    problem = Takuzu(board)
-    s0 = TakuzuState(board)
-    print("Initial:\n", s0.board, sep="")
-    print("Is goal?", problem.goal_test(s0))
-    print(problem.actions(s0))
-    s1 = problem.result(s0, (0, 0, 0))
-    print(s1.board)
-    print(problem.actions(s1))
-    s2 = problem.result(s1, (0, 1, 1))
-    print(s2.board)
-    print(problem.actions(s2))
-    s3 = problem.result(s2, (1, 2, 0))
-    print(s3.board)
-    print(problem.actions(s3))
-    """
-
-    """
-    # Exemplo heurísticas
-    board = Board.parse_instance_from_stdin()
-    problem = Takuzu(board)
-    s0 = TakuzuState(board)
-    print(problem.h(Node(s0)))
-    """
