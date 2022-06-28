@@ -4,8 +4,8 @@
 # 99259 José João Ferreira
 
 import numpy as np
-
 import sys
+
 from search import (
     Problem,
     Node,
@@ -73,7 +73,7 @@ class Board:
         v1 = self.array[row, col - 1] if (col > 0) else (None) 
         v2 = self.array[row, col + 1] if (col < self.dim - 1) else (None)
         return (v1, v2)
-    
+
     def two_numbers(self, row: int, col: int, mode) -> tuple:
         """Devolve os dois valores imediatamente abaixo, acima, à esquerda ou à direita,
         dependendo da string argumento."""
@@ -127,6 +127,7 @@ class Board:
         new_col_tally[action[1]][action[2]] += 1
         return Board(array, self.dim, new_empty_cells, new_row_tally, new_col_tally)
 
+
 class Takuzu(Problem):
     def __init__(self, board: Board):
         """O construtor especifica o estado inicial."""
@@ -166,7 +167,7 @@ class Takuzu(Problem):
         for i in range(dim):
             zeros = row_t[i][0]
             ones = row_t[i][1]
-            # IDK: provisório?
+            # Tabuleiro inválido se um dos números estiver preenchido para lá do número máximo
             if (zeros >= dim/2 + 1 or ones >= dim/2 + 1):
                 return []
             # Se só falta preencher uma célula
@@ -199,7 +200,7 @@ class Takuzu(Problem):
         for i in range(dim):
             zeros = col_t[i][0]
             ones = col_t[i][1]
-            # IDK: provisório?
+            # Tabuleiro inválido se um dos números estiver preenchido para lá do número máximo
             if (zeros >= dim/2 + 1 or ones >= dim/2 + 1):
                 return []
             # Se só falta preencher uma célula
@@ -242,7 +243,6 @@ class Takuzu(Problem):
                             return [(i, j, 1)]
                         elif (t == (1, 1)):
                             return [(i, j, 0)]
-
         
         # 03. Caso em que vemos as células imediatamente adjacentes
         for i in range(dim):
@@ -255,7 +255,7 @@ class Takuzu(Problem):
                         return [(i, j, 1)]
                     if (h == (1, 1) or v == (1, 1)):
                         return [(i, j, 0)]
-        
+    
         # 04. Caso em que nada sabemos e damos prioridade ao número menos presente na linha e coluna
         res = []
         for i in range(dim):
@@ -285,11 +285,10 @@ class Takuzu(Problem):
         estão preenchidas com uma sequência de números adjacentes."""
         
         board = state.board
-
         row_t = board.row_tally
         col_t = board.col_tally
         dim = board.dim
-        # Se a some de 0's e 1's para cada linha é menor que a dimensão do
+        # Se a soma de 0's e 1's para cada linha é menor que a dimensão do
         # tabuleiro, então o tabuleiro ainda tem células vazias
         for i in range(dim):
             if sum(row_t[i]) != dim:
@@ -327,8 +326,6 @@ class Takuzu(Problem):
         heuristic += (c / dim**2)
         return heuristic
 
-    # TODO: outros metodos da classe
-
 
 if __name__ == "__main__":  # Função main
     # Resolução do problema
@@ -338,7 +335,7 @@ if __name__ == "__main__":  # Função main
     c = 0
     for i in range(dim):
         c += sum(board.row_tally[i])
-    # Se o número de células preenchidas < metade, aplicar A*
+    # Se o número de células preenchidas < metade, aplicar Greedy
     if (c < (dim**2)/2):
         goal_node = greedy_search(problem, problem.h)
     # Caso contrário, aplicar a procura DFS

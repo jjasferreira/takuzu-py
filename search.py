@@ -93,9 +93,6 @@ class Node:
 
     def expand(self, problem):
         """List the nodes reachable in one step from this node."""
-        """
-        """
-        print(problem.actions(self.state))  # NEW
         return [self.child_node(problem, action)
                 for action in problem.actions(self.state)]
 
@@ -210,15 +207,10 @@ def depth_first_tree_search(problem):
 
         while frontier:
             node = frontier.pop()
-            sys.stdout.flush() # NEW
-            print("State ID: ", node.state.id) # NEW
-            sys.stdout.flush() # NEW
             if problem.goal_test(node.state):
                 return node
             frontier.extend(node.expand(problem))
     except KeyboardInterrupt:
-        print(node.state.board) # NEW
-        sys.stdout.flush() # NEW
         exit(1)
     return None
 
@@ -282,11 +274,6 @@ def best_first_graph_search(problem, f, display=False):
     explored = set()
     while frontier:
         node = frontier.pop()
-        """
-        print("==============================") # NEW
-        print("State ID: ", node.state.id) # NEW
-        print(node.state.board) # NEW
-        """
         if problem.goal_test(node.state):
             if display:
                 print(len(explored), "paths have been expanded and", len(frontier), "paths remain in the frontier")
