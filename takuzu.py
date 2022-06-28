@@ -9,20 +9,18 @@ import sys
 from search import (
     Problem,
     Node,
-    astar_search,
-    breadth_first_tree_search,
     depth_first_tree_search,
     greedy_search,
-    recursive_best_first_search,
 )
 
 
 class TakuzuState:
     state_id = 0
-
-    def __init__(self, board: 'Board'):
+    
+    def __init__(self, board: 'Board', last):
         self.board = board
         self.id = TakuzuState.state_id
+        self.last = last
         TakuzuState.state_id += 1
 
     def __lt__(self, other):
@@ -131,7 +129,7 @@ class Board:
 class Takuzu(Problem):
     def __init__(self, board: Board):
         """O construtor especifica o estado inicial."""
-        self.initial = TakuzuState(board)
+        self.initial = TakuzuState(board, None)
 
     def actions(self, state: TakuzuState):
         """Retorna uma lista de ações que podem ser executadas a
@@ -161,7 +159,7 @@ class Takuzu(Problem):
             if (hori == (v, v) or vert == (v, v)):
                 return False
             return True
-
+  
         # 01. Caso em que analisamos linhas e colunas na sua totalidade
         # Por cada linha
         for i in range(dim):
@@ -277,7 +275,7 @@ class Takuzu(Problem):
         das presentes na lista obtida pela execução de
         self.actions(state)."""
         board = state.board.apply_action(action)
-        return TakuzuState(board)
+        return TakuzuState(board, action)
 
     def goal_test(self, state: TakuzuState):
         """Retorna True se e só se o estado passado como argumento é
@@ -295,7 +293,6 @@ class Takuzu(Problem):
                 return False
         rows = set()
         cols = set()
-
         for i in range(dim):
             r = board.get_row(i)
             c = board.get_column(i)
@@ -311,23 +308,19 @@ class Takuzu(Problem):
 
     def h(self, node: Node):
         """Função heuristica utilizada para a procura A*."""
-        heuristic = 0
-        c = 0
+        """Função heuristica utilizada para a procura A*."""
+        last_action = node.state.last
         board = node.state.board
-        dim = board.dim
-
-        for i in range(dim):
-            for j in range(dim):
-                for m in ("previous", "following", "below", "above"):
-                    t = board.two_numbers(i, j, m)
-                    for value in t:
-                        if value == 2:
-                            c += 1
-        heuristic += (c / dim**2)
-        return heuristic
+        row_t = board.row_tally
+        col_t = board.col_tally
+        # returns the number of cells with the same value in the line and column of the action being considered
+        if last_action != None:
+            return row_t[last_action[0]][last_action[2]] + col_t[last_action[1]][last_action[2]]
+        return 0
 
 
 if __name__ == "__main__":  # Função main
+
     # Resolução do problema
     board = Board.parse_instance_from_stdin()
     dim = board.dim

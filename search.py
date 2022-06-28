@@ -1558,11 +1558,9 @@ class InstrumentedProblem(Problem):
 
 def compare_searchers(problems, header,
                       searchers=[breadth_first_tree_search,
-                                 breadth_first_graph_search,
-                                 depth_first_graph_search,
-                                 iterative_deepening_search,
-                                 depth_limited_search,
-                                 recursive_best_first_search]):
+                      depth_first_tree_search,
+                      greedy_search,
+                      astar_search]):
     def do(searcher, problem):
         p = InstrumentedProblem(problem)
         searcher(p)
