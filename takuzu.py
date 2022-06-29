@@ -16,8 +16,8 @@ from search import (
 
 class TakuzuState:
     state_id = 0
-    
-    def __init__(self, board: 'Board', last):
+
+    def __init__(self, board: "Board", last):
         self.board = board
         self.id = TakuzuState.state_id
         self.last = last
@@ -29,6 +29,7 @@ class TakuzuState:
 
 class Board:
     """Representação interna de um tabuleiro de Takuzu."""
+
     def __init__(self, array, dim, empty_cells, row_tally, col_tally):
         self.array = array
         self.dim = dim
@@ -42,17 +43,17 @@ class Board:
         for i in range(self.dim):
             for j in range(self.dim):
                 res += str(self.array[i, j])
-                if (j < self.dim - 1):
+                if j < self.dim - 1:
                     res += "\t"
-            if (i < self.dim - 1):
+            if i < self.dim - 1:
                 res += "\n"
         return res
-    
+
     def get_row(self, row: int) -> tuple:
-        return tuple(self.array[row, :self.dim])
+        return tuple(self.array[row, : self.dim])
 
     def get_column(self, col: int) -> tuple:
-        return tuple(self.array[:self.dim, col])
+        return tuple(self.array[: self.dim, col])
 
     def get_number(self, row: int, col: int) -> int:
         """Devolve o valor na respetiva posição do tabuleiro."""
@@ -62,29 +63,29 @@ class Board:
         """Devolve os valores imediatamente abaixo e acima,
         respectivamente."""
         v1 = self.array[row + 1, col] if (row < self.dim - 1) else (None)
-        v2 = self.array[row - 1, col] if (row > 0) else (None) 
+        v2 = self.array[row - 1, col] if (row > 0) else (None)
         return (v1, v2)
 
     def adjacent_horizontal_numbers(self, row: int, col: int) -> tuple:
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
-        v1 = self.array[row, col - 1] if (col > 0) else (None) 
+        v1 = self.array[row, col - 1] if (col > 0) else (None)
         v2 = self.array[row, col + 1] if (col < self.dim - 1) else (None)
         return (v1, v2)
 
     def two_numbers(self, row: int, col: int, mode) -> tuple:
         """Devolve os dois valores imediatamente abaixo, acima, à esquerda ou à direita,
         dependendo da string argumento."""
-        if (mode == "below"):
+        if mode == "below":
             v1 = self.array[row + 2, col] if (row < self.dim - 2) else (None)
             v2 = self.array[row + 1, col] if (row < self.dim - 1) else (None)
-        elif (mode == "above"):
-            v1 = self.array[row - 1, col] if (row > 0) else (None) 
-            v2 = self.array[row - 2, col] if (row > 1) else (None) 
-        elif (mode == "previous"):
+        elif mode == "above":
+            v1 = self.array[row - 1, col] if (row > 0) else (None)
+            v2 = self.array[row - 2, col] if (row > 1) else (None)
+        elif mode == "previous":
             v1 = self.array[row, col - 2] if (col > 1) else (None)
             v2 = self.array[row, col - 1] if (col > 0) else (None)
-        elif (mode == "following"):
+        elif mode == "following":
             v1 = self.array[row, col + 1] if (col < self.dim - 1) else (None)
             v2 = self.array[row, col + 2] if (col < self.dim - 2) else (None)
         return (v1, v2)
@@ -134,114 +135,122 @@ class Takuzu(Problem):
     def actions(self, state: TakuzuState):
         """Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento."""
-        modes = ("previous", "following", "below", "above")
         board = state.board
         dim = board.dim
-        row_t = board.row_tally
-        col_t = board.col_tally
-        
+
         def check_two_numbers(state: TakuzuState, l: int, c: int, v: int):
             """Retorna verdadeiro se for possível colocar "v"
             na célula com linha "l" e coluna "c", com base nos dois valores
             imediatamente ao lado em todos os sentidos."""
             for m in ("previous", "following", "below", "above"):
                 f = state.board.two_numbers(l, c, m)
-                if (f == (v, v)):
+                if f == (v, v):
                     return False
             return True
-    
+
         def check_adjacent(state: TakuzuState, l: int, c: int, v: int):
             """Retorna verdadeiro se for possível colocar "v"
             na célula com linha "l" e coluna "c", com base nos
             valores adjacentes nas duas direções"""
             hori = state.board.adjacent_horizontal_numbers(l, c)
             vert = state.board.adjacent_vertical_numbers(l, c)
-            if (hori == (v, v) or vert == (v, v)):
+            if hori == (v, v) or vert == (v, v):
                 return False
             return True
-  
+
         # 01. Caso em que analisamos linhas e colunas na sua totalidade
         # Por cada linha
+        row_t = board.row_tally
         for i in range(dim):
             zeros = row_t[i][0]
             ones = row_t[i][1]
             # Tabuleiro inválido se um dos números estiver preenchido para lá do número máximo
-            if (zeros >= dim/2 + 1 or ones >= dim/2 + 1):
+            if zeros >= dim / 2 + 1 or ones >= dim / 2 + 1:
                 return []
             # Se só falta preencher uma célula
-            if (zeros + ones == dim - 1):
+            if zeros + ones == dim - 1:
                 for j in range(dim):
-                    if (board.get_number(i, j) == 2):
+                    if board.get_number(i, j) == 2:
                         p = j
                 # Se há um valor em maior número
-                if (zeros - ones != 0):
+                if zeros - ones != 0:
                     v = 1 if (zeros > ones) else (0)
-                    if check_adjacent(state, i, p, v) and check_two_numbers(state, i, p, v):
+                    if check_adjacent(state, i, p, v) and check_two_numbers(
+                        state, i, p, v
+                    ):
                         return [(i, p, v)]
                     else:
                         return []
             # Se um dos números já está maximizado
-            elif (zeros >= dim/2 or ones >= dim/2):
+            elif zeros >= dim / 2 or ones >= dim / 2:
                 for j in range(dim):
                     n = board.get_number(i, j)
                     # Encontrar primeira célula vazia
-                    if (n == 2):
+                    if n == 2:
                         # Tentar atribuir-lhe o valor em menor número
                         v = 1 if (zeros > ones) else (0)
                         # Se for possível
-                        if (check_two_numbers(state, i, j, v) and check_adjacent(state, i, j, v)):
+                        if check_two_numbers(state, i, j, v) and check_adjacent(
+                            state, i, j, v
+                        ):
                             return [(i, j, v)]
                         # Caso contrário
                         else:
                             return []
-        # Por cada coluna                
+        # Por cada coluna
+        col_t = board.col_tally
         for i in range(dim):
             zeros = col_t[i][0]
             ones = col_t[i][1]
             # Tabuleiro inválido se um dos números estiver preenchido para lá do número máximo
-            if (zeros >= dim/2 + 1 or ones >= dim/2 + 1):
+            if zeros >= dim / 2 + 1 or ones >= dim / 2 + 1:
                 return []
             # Se só falta preencher uma célula
-            if (zeros + ones == dim - 1):
+            if zeros + ones == dim - 1:
                 for j in range(dim):
-                    if (board.get_number(j, i) == 2):
+                    if board.get_number(j, i) == 2:
                         p = j
                 # Se há um valor em maior número
-                if (zeros - ones != 0):
+                if zeros - ones != 0:
                     v = 1 if (zeros > ones) else (0)
-                    if check_adjacent(state, p, i, v) and check_two_numbers(state, p, i, v):
+                    if check_adjacent(state, p, i, v) and check_two_numbers(
+                        state, p, i, v
+                    ):
                         return [(p, i, v)]
                     else:
                         return []
                 # O caso em que o tabuleiro é ímpar e há um número igual de 1's e 0's
                 # permite as duas jogadas, pelo que não vale a pena considerá-lo aqui
-                
+
             # Se um dos números já está maximizado
-            elif (zeros >= dim/2 or ones >= dim/2):
+            elif zeros >= dim / 2 or ones >= dim / 2:
                 for j in range(dim):
                     n = board.get_number(j, i)
                     # Encontrar primeira célula vazia
-                    if (n == 2):
+                    if n == 2:
                         # Tentar atribuir-lhe o valor em menor número
                         v = 1 if (zeros > ones) else (0)
                         # Se for possível
-                        if (check_two_numbers(state, j, i, v) and check_adjacent(state, j, i, v)):
+                        if check_two_numbers(state, j, i, v) and check_adjacent(
+                            state, j, i, v
+                        ):
                             return [(j, i, v)]
                         # Caso contrário
                         else:
                             return []
 
         # 02. Caso em que temos 2 células consecutivas iguais
+        modes = ("previous", "following", "below", "above")
         for i in range(dim):
             for j in range(dim):
                 if board.get_number(i, j) == 2:
                     for m in modes:
                         t = board.two_numbers(i, j, m)
-                        if (t == (0, 0)):
+                        if t == (0, 0):
                             return [(i, j, 1)]
-                        elif (t == (1, 1)):
+                        elif t == (1, 1):
                             return [(i, j, 0)]
-        
+
         # 03. Caso em que vemos as células imediatamente adjacentes
         for i in range(dim):
             for j in range(dim):
@@ -249,22 +258,24 @@ class Takuzu(Problem):
                     h = board.adjacent_horizontal_numbers(i, j)
                     v = board.adjacent_vertical_numbers(i, j)
                     # Se houver alguma dupla igual, a escolha é óbvia
-                    if (h == (0, 0) or v == (0, 0)):
+                    if h == (0, 0) or v == (0, 0):
                         return [(i, j, 1)]
-                    if (h == (1, 1) or v == (1, 1)):
+                    if h == (1, 1) or v == (1, 1):
                         return [(i, j, 0)]
-    
+
         # 04. Caso em que nada sabemos e damos prioridade ao número menos presente na linha e coluna
         res = []
         for i in range(dim):
             for j in range(dim):
                 if board.get_number(i, j) == 2:
-                    if (row_t[i][0] > row_t[i][1] and col_t[j][0] >= col_t[j][1]) or \
-                        (row_t[i][0] >= row_t[i][1] and col_t[j][0] > col_t[j][1]):
-                            return [(i, j, 1), (i, j, 0)]
-                    elif (row_t[i][0] < row_t[i][1] and col_t[j][0] <= col_t[j][1]) or \
-                        (row_t[i][0] <= row_t[i][1] and col_t[j][0] < col_t[j][1]):
-                            return [(i, j, 0), (i, j, 1)]
+                    if (row_t[i][0] > row_t[i][1] and col_t[j][0] >= col_t[j][1]) or (
+                        row_t[i][0] >= row_t[i][1] and col_t[j][0] > col_t[j][1]
+                    ):
+                        return [(i, j, 1), (i, j, 0)]
+                    elif (row_t[i][0] < row_t[i][1] and col_t[j][0] <= col_t[j][1]) or (
+                        row_t[i][0] <= row_t[i][1] and col_t[j][0] < col_t[j][1]
+                    ):
+                        return [(i, j, 0), (i, j, 1)]
                     else:
                         return [(i, j, 0), (i, j, 1)]
         return res
@@ -281,7 +292,7 @@ class Takuzu(Problem):
         """Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas com uma sequência de números adjacentes."""
-        
+
         board = state.board
         row_t = board.row_tally
         col_t = board.col_tally
@@ -299,24 +310,41 @@ class Takuzu(Problem):
             if r in rows or c in cols:
                 return False
             else:
-                if row_t[i][0] >= dim/2 + 1 or row_t[i][1] >= dim/2 + 1 or \
-                    col_t[i][0] >= dim/2 + 1 or col_t[i][1] >= dim/2 + 1:
+                if (
+                    row_t[i][0] >= dim / 2 + 1
+                    or row_t[i][1] >= dim / 2 + 1
+                    or col_t[i][0] >= dim / 2 + 1
+                    or col_t[i][1] >= dim / 2 + 1
+                ):
                     return False
                 rows.add(r)
                 cols.add(c)
         return True
 
     def h(self, node: Node):
-        """Função heuristica utilizada para a procura A*."""
-        """Função heuristica utilizada para a procura A*."""
-        last_action = node.state.last
+        """Função heuristica utilizada para as procuras Greedy e A*."""
         board = node.state.board
-        row_t = board.row_tally
-        col_t = board.col_tally
-        # returns the number of cells with the same value in the line and column of the action being considered
-        if last_action != None:
-            return row_t[last_action[0]][last_action[2]] + col_t[last_action[1]][last_action[2]]
+
+        # Heurística 1: maior quanto maior for o número de células esparsamente preenchidas
+        dim = board.dim
+        c = 0
+        for i in range(dim):
+            for j in range(dim):
+                for m in ("previous", "following", "below", "above"):
+                    t = board.two_numbers(i, j, m)
+                    for value in t:
+                        if value == 2:
+                            c += 1
+        return c / dim**2
+
+        """
+        # Heurística 2: devolve o número de células com o mesmo
+        # valor na linha e na coluna da última ação do tabuleiro
+        last = node.state.last
+        if last != None:
+            return board.row_tally[last[0]][last[2]] + board.col_tally[last[1]][last[2]]
         return 0
+        """
 
 
 if __name__ == "__main__":  # Função main
@@ -329,7 +357,7 @@ if __name__ == "__main__":  # Função main
     for i in range(dim):
         c += sum(board.row_tally[i])
     # Se o número de células preenchidas < metade, aplicar Greedy
-    if (c < (dim**2)/2):
+    if c < (dim**2) / 2:
         goal_node = greedy_search(problem, problem.h)
     # Caso contrário, aplicar a procura DFS
     else:

@@ -30,6 +30,8 @@ In addition to the tests in this _repo_, you can find more and their respective 
 
 ## Formatting
 
+We made the final report using [Obsidian](https://obsidian.md/).
+
 In order to keep consistency in this project, we use [`black`](https://github.com/psf/black) as a code formatter for Python files.
 
 Alternatively, for the Markdown ones, we use [`prettier`](https://github.com/prettier/prettier).
